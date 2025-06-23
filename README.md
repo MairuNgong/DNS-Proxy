@@ -28,3 +28,4 @@ The DNS proxy performs the following key functions:
 ## Requirements
 
 - Go 1.18 or higher
+- Parse DNS quiries with [github.com/miekg/dns](https://github.com/miekg/dns) library
