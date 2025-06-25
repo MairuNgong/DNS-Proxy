@@ -38,6 +38,45 @@ func main() {
 		for _, q := range msg.Question {
 			fmt.Printf(" - Question: %s, Type: %s\n", q.Name, dns.TypeToString[q.Qtype])
 		}
-		println("--------------------------------------")
+		go ResolveDNSRequest(conn, clientAddr, buffer[:n])
+	}
+}
+
+func ResolveDNSRequest(conn *net.UDPConn, clientAddr *net.UDPAddr, query []byte) {
+	upstreamAddr := net.UDPAddr{
+		Port: 53,
+		IP:   net.ParseIP("8.8.8.8"),
+	}
+
+	upConn, err := net.Dial("udp", upstreamAddr.String())
+	if err != nil {
+		log.Fatalf("Failed to connect to google dns: %v", err)
+	}
+	defer upConn.Close()
+
+	_, err = upConn.Write(query)
+	if err != nil {
+		log.Println("Failed to forward DNS query:", err)
+		return
+	}
+
+	buffer := make([]byte, 1024)
+
+	n, err := upConn.Read(buffer)
+	if err != nil {
+		log.Println("Failed to read DNS answer:", err)
+		return
+	}
+
+	var msg dns.Msg
+	msg.Unpack(buffer[:n])
+
+	for _, ans := range msg.Answer {
+		switch rr := ans.(type) {
+		case *dns.A:
+			fmt.Printf(" - Resolved A Record: %s -> %s\n", rr.Hdr.Name, rr.A.String())
+		case *dns.AAAA:
+			fmt.Printf(" - Resolved AAAA Record: %s -> %s\n", rr.Hdr.Name, rr.AAAA.String())
+		}
 	}
 }
