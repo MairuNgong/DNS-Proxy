@@ -79,4 +79,9 @@ func ResolveDNSRequest(conn *net.UDPConn, clientAddr *net.UDPAddr, query []byte)
 			fmt.Printf(" - Resolved AAAA Record: %s -> %s\n", rr.Hdr.Name, rr.AAAA.String())
 		}
 	}
+	_, err = conn.WriteToUDP(buffer[:n], clientAddr)
+	if err != nil {
+		log.Println("Failed to send back to  client:", err)
+		return
+	}
 }
